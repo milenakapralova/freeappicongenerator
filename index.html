@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Maker</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2' y='2' width='20' height='20' rx='7' fill='%234d9fff'/%3E%3Crect x='7.5' y='7.5' width='9' height='9' rx='3' fill='%2306121f'/%3E%3C/svg%3E">
+    <style>
+        @font-face {
+            font-family: 'Space Grotesk';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('fonts/space-grotesk-latin-400-normal.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Space Grotesk';
+            font-style: normal;
+            font-weight: 500;
+            font-display: swap;
+            src: url('fonts/space-grotesk-latin-500-normal.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Space Grotesk';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: url('fonts/space-grotesk-latin-600-normal.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Space Grotesk';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: url('fonts/space-grotesk-latin-700-normal.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'JetBrains Mono';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'JetBrains Mono';
+            font-style: normal;
+            font-weight: 500;
+            font-display: swap;
+            src: url('fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2');
+        }
+        :root {
+            --canvas: #0c0c0e;
+            --surface: #151517;
+            --surface-2: #1b1b1f;
+            --line: rgba(255, 255, 255, 0.08);
+            --line-strong: rgba(255, 255, 255, 0.16);
+            --text: #ededf0;
+            --text-dim: #86868f;
+            --accent: #4d9fff;
+            --accent-soft: rgba(77, 159, 255, 0.16);
+            --radius: 16px;
+            --ui: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--ui);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 28px;
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at 20% -10%, rgba(77, 159, 255, 0.06), transparent 60%),
+                var(--canvas);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 920px;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+        }
+
+        .app-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .body {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+        }
+
+        /* ---------- Left: the stage ---------- */
+        .stage {
+            position: relative;
+            min-height: 460px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            padding: 36px;
+            cursor: pointer;
+            border-right: 1px solid var(--line);
+            background-color: #101013;
+            background-image:
+                linear-gradient(45deg, #17171b 25%, transparent 25%),
+                linear-gradient(-45deg, #17171b 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #17171b 75%),
+                linear-gradient(-45deg, transparent 75%, #17171b 75%);
+            background-size: 22px 22px;
+            background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+            transition: background-color 0.2s ease;
+        }
+
+        .stage.dragover {
+            background-color: #15171d;
+            box-shadow: inset 0 0 0 2px var(--accent);
+        }
+
+        .empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .empty .glyph {
+            width: 72px;
+            height: 72px;
+            border-radius: 22px;
+            display: grid;
+            place-items: center;
+            background: var(--surface-2);
+            border: 1px dashed var(--line-strong);
+            color: var(--accent);
+        }
+
+        .empty h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .empty p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        canvas {
+            display: none;
+            width: auto;
+            max-width: 100%;
+            border-radius: 8px;
+            filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
+        }
+
+        #previewCanvas { max-height: 280px; }
+
+        #phonePreviewCanvas {
+            width: 160px;
+            height: 200px;
+            border-radius: 18px;
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+        }
+
+        .preview-grid {
+            display: none;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 28px;
+        }
+
+        .preview-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preview-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            color: var(--text-dim);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 5px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+        }
+
+        .stage.loaded {
+            cursor: default;
+            background-image: none;
+        }
+
+        .stage.loaded #previewCanvas,
+        .stage.loaded #phonePreviewCanvas { display: block; }
+        .stage.loaded .preview-grid { display: flex; }
+        .stage.loaded .empty { display: none; }
+
+        #canvas { display: none !important; }
+
+        /* ---------- Right: the panel ---------- */
+        .panel {
+            display: flex;
+            flex-direction: column;
+            padding: 28px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .brand svg { display: block; }
+
+        .brand .name {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand .sub {
+            margin-left: auto;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.02em;
+        }
+
+        .tagline {
+            margin: 10px 0 0;
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.5;
+            max-width: 52ch;
+        }
+
+        .controls { display: none; flex-direction: column; }
+        .controls.show { display: flex; }
+
+        .control-group { margin-bottom: 20px; }
+
+        .label-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            color: var(--text);
+        }
+
+        label .hint {
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        .value-display {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        /* Range sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--accent);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            transition: transform 0.12s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.12); }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--accent);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Color swatch */
+        .swatch-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 52px;
+            height: 40px;
+            padding: 0;
+            border: 1px solid var(--line-strong);
+            border-radius: 10px;
+            background: none;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 4px; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+        input[type="color"]::-moz-color-swatch { border: none; border-radius: 6px; }
+
+        .swatch-hex {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--text);
+            text-transform: uppercase;
+        }
+
+        /* Select */
+        select {
+            width: 100%;
+            padding: 11px 13px;
+            font-family: var(--ui);
+            font-size: 13px;
+            color: var(--text);
+            background: var(--surface-2);
+            border: 1px solid var(--line-strong);
+            border-radius: 10px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2386868f' d='M1 1.5L6 6.5L11 1.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 13px center;
+        }
+
+        /* Download button */
+        .download-row {
+            margin-top: auto;
+            display: none;
+            gap: 10px;
+        }
+        .download-row.show { display: flex; }
+
+        .download-btn {
+            flex: 1;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--accent);
+            color: #06121f;
+            border: none;
+            border-radius: 12px;
+            font-family: var(--ui);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.15s ease, transform 0.1s ease, background 0.15s ease;
+        }
+        .download-btn.secondary {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--line-strong);
+        }
+        .download-btn:hover { filter: brightness(1.08); }
+        .download-btn.secondary:hover { background: #25252a; filter: none; }
+        .download-btn:active { transform: translateY(1px); }
+
+        input[type="file"] { display: none; }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 720px) {
+            .app { max-width: 460px; }
+            .body { grid-template-columns: 1fr; }
+            .stage { border-right: none; border-bottom: 1px solid var(--line); min-height: 320px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="app-header">
+            <div class="brand">
+                <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="2" y="2" width="20" height="20" rx="7" fill="#4d9fff"/>
+                    <rect x="7.5" y="7.5" width="9" height="9" rx="3" fill="#06121f"/>
+                </svg>
+                <span class="name">Free App Icon Generator</span>
+            </div>
+            <p class="tagline">Turn any image into a clean, rounded app icon or favicon. Tune it, then export a transparent PNG or a ready-to-use .ico file.</p>
+        </header>
+
+        <div class="body">
+        <!-- Stage / dropzone -->
+        <div class="stage" id="uploadArea">
+            <input type="file" id="fileInput" accept="image/*">
+            <div class="empty">
+                <div class="glyph">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="6"/>
+                        <path d="M3 16l4-4a2 2 0 0 1 3 0l5 5"/>
+                        <circle cx="15" cy="9" r="1.6"/>
+                    </svg>
+                </div>
+                <h2>Drop an image</h2>
+                <p>or click anywhere to browse</p>
+            </div>
+            <div class="preview-grid" id="previewGrid">
+                <div class="preview-block">
+                    <canvas id="previewCanvas"></canvas>
+                    <span class="preview-label">Export preview · checkerboard = transparent</span>
+                </div>
+                <div class="preview-block">
+                    <canvas id="phonePreviewCanvas"></canvas>
+                    <span class="preview-label">On home screen</span>
+                </div>
+            </div>
+            <canvas id="canvas" aria-hidden="true"></canvas>
+        </div>
+
+        <!-- Control panel -->
+        <div class="panel">
+            <div class="controls" id="controls">
+                <div class="control-group">
+                    <div class="label-row">
+                        <label for="bgColor">Background color</label>
+                    </div>
+                    <div class="swatch-row">
+                        <input type="color" id="bgColor" value="#000000">
+                        <span class="swatch-hex" id="bgColorValue">#000000</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label for="bgSize">Background size <span class="hint">· padding</span></label>
+                        <span class="value-display" id="bgSizeValue">92%</span>
+                    </div>
+                    <input type="range" id="bgSize" min="70" max="100" value="92">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label for="imageSize">Image size</label>
+                        <span class="value-display" id="sizeValue">60%</span>
+                    </div>
+                    <input type="range" id="imageSize" min="30" max="90" value="60">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label for="fitMode">Fit mode</label>
+                    </div>
+                    <select id="fitMode">
+                        <option value="contain" selected>Contain — show the full image</option>
+                        <option value="cover">Cover — fill the icon, may crop</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label for="cornerRadius">Corner radius</label>
+                        <span class="value-display" id="radiusValue">22%</span>
+                    </div>
+                    <input type="range" id="cornerRadius" min="0" max="50" value="22">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label for="canvasSize">PNG export size</label>
+                        <span class="value-display" id="canvasSizeValue">512px</span>
+                    </div>
+                    <input type="range" id="canvasSize" min="128" max="1024" step="128" value="512">
+                </div>
+            </div>
+
+            <div class="download-row" id="downloadRow">
+                <button class="download-btn" id="downloadBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 20h16"/>
+                    </svg>
+                    .png
+                </button>
+                <button class="download-btn secondary" id="downloadIcoBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 20h16"/>
+                    </svg>
+                    .ico (favicon)
+                </button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        const stage = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const controls = document.getElementById('controls');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const phonePreviewCanvas = document.getElementById('phonePreviewCanvas');
+        const phonePreviewCtx = phonePreviewCanvas.getContext('2d');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadIcoBtn = document.getElementById('downloadIcoBtn');
+        const downloadRow = document.getElementById('downloadRow');
+
+        const bgColor = document.getElementById('bgColor');
+        const bgSize = document.getElementById('bgSize');
+        const imageSize = document.getElementById('imageSize');
+        const cornerRadius = document.getElementById('cornerRadius');
+        const canvasSize = document.getElementById('canvasSize');
+        const fitMode = document.getElementById('fitMode');
+
+        const bgSizeValue = document.getElementById('bgSizeValue');
+        const sizeValue = document.getElementById('sizeValue');
+        const radiusValue = document.getElementById('radiusValue');
+        const canvasSizeValue = document.getElementById('canvasSizeValue');
+        const bgColorValue = document.getElementById('bgColorValue');
+
+        let uploadedImage = null;
+
+        // Paint the filled portion of a range slider with the accent color
+        function updateRangeFill(el) {
+            const min = +el.min, max = +el.max;
+            const pct = ((+el.value - min) / (max - min)) * 100;
+            el.style.background =
+                `linear-gradient(90deg, var(--accent) 0%, var(--accent) ${pct}%, rgba(255,255,255,0.12) ${pct}%, rgba(255,255,255,0.12) 100%)`;
+        }
+        [bgSize, imageSize, cornerRadius, canvasSize].forEach(updateRangeFill);
+
+        // Update value displays
+        bgSize.addEventListener('input', () => {
+            bgSizeValue.textContent = bgSize.value + '%';
+            updateRangeFill(bgSize);
+            if (uploadedImage) drawIcon();
+        });
+
+        imageSize.addEventListener('input', () => {
+            sizeValue.textContent = imageSize.value + '%';
+            updateRangeFill(imageSize);
+            if (uploadedImage) drawIcon();
+        });
+
+        cornerRadius.addEventListener('input', () => {
+            radiusValue.textContent = cornerRadius.value + '%';
+            updateRangeFill(cornerRadius);
+            if (uploadedImage) drawIcon();
+        });
+
+        canvasSize.addEventListener('input', () => {
+            canvasSizeValue.textContent = canvasSize.value + 'px';
+            updateRangeFill(canvasSize);
+            if (uploadedImage) drawIcon();
+        });
+
+        bgColor.addEventListener('input', () => {
+            bgColorValue.textContent = bgColor.value;
+            if (uploadedImage) drawIcon();
+        });
+
+        fitMode.addEventListener('change', () => {
+            if (uploadedImage) drawIcon();
+        });
+
+        // File upload handling
+        stage.addEventListener('click', () => fileInput.click());
+
+        stage.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            stage.classList.add('dragover');
+        });
+
+        stage.addEventListener('dragleave', () => {
+            stage.classList.remove('dragover');
+        });
+
+        stage.addEventListener('drop', (e) => {
+            e.preventDefault();
+            stage.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImage(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadImage(file);
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    stage.classList.add('loaded');
+                    controls.classList.add('show');
+                    downloadRow.classList.add('show');
+                    drawIcon();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function drawIcon() {
+            const size = parseInt(canvasSize.value);
+            canvas.width = size;
+            canvas.height = size;
+
+            // Clear canvas to transparent
+            ctx.clearRect(0, 0, size, size);
+
+            // Calculate background square size (with transparent padding around it)
+            const bgScale = parseInt(bgSize.value) / 100;
+            const bgSquareSize = size * bgScale;
+            const bgOffset = (size - bgSquareSize) / 2;
+
+            const radius = (bgSquareSize * parseInt(cornerRadius.value)) / 100;
+
+            // Draw rounded rectangle background
+            ctx.fillStyle = bgColor.value;
+            ctx.beginPath();
+            ctx.roundRect(bgOffset, bgOffset, bgSquareSize, bgSquareSize, radius);
+            ctx.fill();
+
+            // Calculate image dimensions while maintaining aspect ratio
+            const imgScale = parseInt(imageSize.value) / 100;
+            const maxSize = bgSquareSize * imgScale;
+
+            const imgAspect = uploadedImage.width / uploadedImage.height;
+            let imgWidth, imgHeight, imgX, imgY;
+
+            const mode = fitMode.value;
+
+            if (mode === 'contain') {
+                // Fit entire image within space
+                if (imgAspect > 1) {
+                    // Landscape
+                    imgWidth = maxSize;
+                    imgHeight = maxSize / imgAspect;
+                } else {
+                    // Portrait or square
+                    imgHeight = maxSize;
+                    imgWidth = maxSize * imgAspect;
+                }
+
+                imgX = bgOffset + (bgSquareSize - imgWidth) / 2;
+                imgY = bgOffset + (bgSquareSize - imgHeight) / 2;
+
+                ctx.drawImage(uploadedImage, imgX, imgY, imgWidth, imgHeight);
+            } else {
+                // Cover - fill entire space, crop if needed
+                if (imgAspect > 1) {
+                    // Landscape - height will match, width will overflow
+                    imgHeight = maxSize;
+                    imgWidth = maxSize * imgAspect;
+                } else {
+                    // Portrait or square - width will match, height will overflow
+                    imgWidth = maxSize;
+                    imgHeight = maxSize / imgAspect;
+                }
+
+                imgX = bgOffset + (bgSquareSize - imgWidth) / 2;
+                imgY = bgOffset + (bgSquareSize - imgHeight) / 2;
+
+                // Clip to rounded rectangle before drawing
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(
+                    bgOffset + (bgSquareSize - maxSize) / 2,
+                    bgOffset + (bgSquareSize - maxSize) / 2,
+                    maxSize,
+                    maxSize,
+                    radius * 0.8
+                );
+                ctx.clip();
+                ctx.drawImage(uploadedImage, imgX, imgY, imgWidth, imgHeight);
+                ctx.restore();
+            }
+
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const size = canvas.width;
+            const previewDisplay = Math.min(320, size);
+
+            previewCanvas.width = previewDisplay;
+            previewCanvas.height = previewDisplay;
+
+            drawCheckerboard(previewCtx, previewDisplay);
+            previewCtx.drawImage(canvas, 0, 0, size, size, 0, 0, previewDisplay, previewDisplay);
+
+            previewCtx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+            previewCtx.lineWidth = 1;
+            previewCtx.strokeRect(0.5, 0.5, previewDisplay - 1, previewDisplay - 1);
+
+            updatePhonePreview();
+        }
+
+        function updatePhonePreview() {
+            const scale = 2;
+            const width = 160;
+            const height = 200;
+            phonePreviewCanvas.width = width * scale;
+            phonePreviewCanvas.height = height * scale;
+            phonePreviewCtx.setTransform(scale, 0, 0, scale, 0, 0);
+
+            const wallpaper = phonePreviewCtx.createLinearGradient(0, 0, width, height);
+            wallpaper.addColorStop(0, '#4f6fd8');
+            wallpaper.addColorStop(0.45, '#7c5fd4');
+            wallpaper.addColorStop(1, '#d4568f');
+            phonePreviewCtx.fillStyle = wallpaper;
+            phonePreviewCtx.fillRect(0, 0, width, height);
+
+            const iconSize = 64;
+            const iconX = (width - iconSize) / 2;
+            const iconY = 42;
+            const maskRadius = iconSize * 0.224;
+
+            phonePreviewCtx.save();
+            phonePreviewCtx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+            phonePreviewCtx.shadowBlur = 10;
+            phonePreviewCtx.shadowOffsetY = 4;
+            phonePreviewCtx.beginPath();
+            phonePreviewCtx.roundRect(iconX, iconY, iconSize, iconSize, maskRadius);
+            phonePreviewCtx.clip();
+            phonePreviewCtx.fillStyle = '#ffffff';
+            phonePreviewCtx.fillRect(iconX, iconY, iconSize, iconSize);
+            phonePreviewCtx.drawImage(
+                canvas, 0, 0, canvas.width, canvas.height,
+                iconX, iconY, iconSize, iconSize
+            );
+            phonePreviewCtx.restore();
+
+            phonePreviewCtx.fillStyle = '#fff';
+            phonePreviewCtx.font = '500 11px Space Grotesk, sans-serif';
+            phonePreviewCtx.textAlign = 'center';
+            phonePreviewCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+            phonePreviewCtx.shadowBlur = 6;
+            phonePreviewCtx.fillText('My App', width / 2, iconY + iconSize + 20);
+            phonePreviewCtx.shadowBlur = 0;
+        }
+
+        function drawCheckerboard(context, size) {
+            const cell = 8;
+            const tile = document.createElement('canvas');
+            tile.width = tile.height = cell * 2;
+            const tileCtx = tile.getContext('2d');
+            tileCtx.fillStyle = '#3a3a42';
+            tileCtx.fillRect(0, 0, cell * 2, cell * 2);
+            tileCtx.fillStyle = '#2a2a32';
+            tileCtx.fillRect(0, 0, cell, cell);
+            tileCtx.fillRect(cell, cell, cell, cell);
+            context.fillStyle = context.createPattern(tile, 'repeat');
+            context.fillRect(0, 0, size, size);
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'icon.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        // Convert a PNG data URL into raw bytes
+        function dataUrlToBytes(dataUrl) {
+            const base64 = dataUrl.split(',')[1];
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes;
+        }
+
+        // Build a multi-size .ico file (containing PNG frames) from the current icon
+        function buildIco(sizes) {
+            const frames = sizes.map((s) => {
+                const c = document.createElement('canvas');
+                c.width = c.height = s;
+                const cx = c.getContext('2d');
+                cx.imageSmoothingEnabled = true;
+                cx.imageSmoothingQuality = 'high';
+                cx.drawImage(canvas, 0, 0, s, s);
+                return { size: s, bytes: dataUrlToBytes(c.toDataURL('image/png')) };
+            });
+
+            const headerSize = 6 + frames.length * 16;
+            const totalSize = headerSize + frames.reduce((sum, f) => sum + f.bytes.length, 0);
+            const buffer = new Uint8Array(totalSize);
+            const dv = new DataView(buffer.buffer);
+
+            dv.setUint16(0, 0, true);              // reserved
+            dv.setUint16(2, 1, true);              // type: 1 = icon
+            dv.setUint16(4, frames.length, true);  // number of images
+
+            let offset = headerSize;
+            frames.forEach((f, i) => {
+                const entry = 6 + i * 16;
+                buffer[entry] = f.size >= 256 ? 0 : f.size;     // width
+                buffer[entry + 1] = f.size >= 256 ? 0 : f.size; // height
+                buffer[entry + 2] = 0;                          // palette colors
+                buffer[entry + 3] = 0;                          // reserved
+                dv.setUint16(entry + 4, 1, true);               // color planes
+                dv.setUint16(entry + 6, 32, true);              // bits per pixel
+                dv.setUint32(entry + 8, f.bytes.length, true);  // image size
+                dv.setUint32(entry + 12, offset, true);         // image offset
+                buffer.set(f.bytes, offset);
+                offset += f.bytes.length;
+            });
+
+            return buffer;
+        }
+
+        downloadIcoBtn.addEventListener('click', () => {
+            const ico = buildIco([16, 32, 48]);
+            const blob = new Blob([ico], { type: 'image/x-icon' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = 'favicon.ico';
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
