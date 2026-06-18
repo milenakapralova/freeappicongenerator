@@ -48,6 +48,13 @@
             font-display: swap;
             src: url('fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2');
         }
+        @font-face {
+            font-family: 'SF Pro Text';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: local('SF Pro Text Semibold'), local('SFProText-Semibold'), local('.SFNSText-Semibold');
+        }
         :root {
             --canvas: #0c0c0e;
             --surface: #151517;
@@ -59,11 +66,18 @@
             --accent: #4d9fff;
             --accent-soft: rgba(77, 159, 255, 0.16);
             --radius: 16px;
+            --panel-width: 276px;
+            --preview-max-size: min(560px, 78vh);
+            --icon-preview-size: min(640px, 78vh);
             --ui: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
         }
 
         * { box-sizing: border-box; }
+
+        html {
+            overflow-x: hidden;
+        }
 
         body {
             font-family: var(--ui);
@@ -71,8 +85,11 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            width: 100%;
+            max-width: 100%;
             margin: 0;
-            padding: 28px;
+            padding: 16px;
+            overflow-x: hidden;
             color: var(--text);
             background:
                 radial-gradient(1200px 600px at 20% -10%, rgba(77, 159, 255, 0.06), transparent 60%),
@@ -81,8 +98,10 @@
         }
 
         .app {
-            width: 100%;
-            max-width: 920px;
+            width: min(1560px, calc(100vw - 32px));
+            max-width: min(1560px, calc(100vw - 32px));
+            flex-shrink: 0;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             background: var(--surface);
@@ -92,28 +111,44 @@
             box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
         }
 
+        .app.loaded {
+            max-width: min(1560px, calc(100vw - 32px));
+        }
+
         .app-header {
             padding: 24px 28px;
             border-bottom: 1px solid var(--line);
         }
 
-        .body {
-            display: grid;
-            grid-template-columns: 1.05fr 0.95fr;
-        }
-
-        /* ---------- Left: the stage ---------- */
-        .stage {
-            position: relative;
-            min-height: 460px;
+        .app:not(.loaded) {
+            max-width: 520px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 22px;
-            padding: 36px;
-            cursor: pointer;
-            border-right: 1px solid var(--line);
+        }
+
+        .app:not(.loaded) .body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .body {
+            display: grid;
+            grid-template-columns: 1fr;
+            min-width: 0;
+        }
+
+        .body.loaded {
+            grid-template-columns: minmax(0, 1.35fr) minmax(var(--panel-width), 1fr);
+        }
+
+        .body:not(.loaded) .panel {
+            display: none;
+        }
+
+        .previews {
+            min-width: 0;
+            border-right: none;
             background-color: #101013;
             background-image:
                 linear-gradient(45deg, #17171b 25%, transparent 25%),
@@ -125,9 +160,99 @@
             transition: background-color 0.2s ease;
         }
 
-        .stage.dragover {
+        .previews:not(.loaded) {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
+            min-height: 400px;
+        }
+
+        .previews:not(.loaded) .icon-stage {
+            grid-column: 1;
+            grid-row: 1;
+            position: relative;
+            width: 100%;
+            min-height: 400px;
+            padding: 0;
+        }
+
+        .previews:not(.loaded) .empty {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .previews:not(.loaded) .preview-block,
+        .previews:not(.loaded) .phone-stage {
+            display: none;
+        }
+
+        .previews.loaded {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            background-image: none;
+            border-right: 1px solid var(--line);
+        }
+
+        .previews.dragover {
             background-color: #15171d;
             box-shadow: inset 0 0 0 2px var(--accent);
+        }
+
+        .previews.loaded .stage {
+            min-height: 0;
+            padding: 12px 14px;
+            width: 100%;
+        }
+
+        .previews.loaded .phone-stage {
+            border-left: 1px solid var(--line);
+            width: auto;
+            padding: 12px 14px;
+        }
+
+        .previews.loaded .phone-stage .preview-block {
+            width: auto;
+        }
+
+        .phone-stage {
+            flex-shrink: 0;
+        }
+
+        .previews.loaded .preview-block {
+            width: 100%;
+        }
+
+        .previews.loaded .icon-stage .preview-block {
+            width: auto;
+        }
+
+        .previews.loaded #previewCanvas {
+            width: var(--icon-preview-size);
+            max-width: 100%;
+            aspect-ratio: 1;
+            height: auto;
+        }
+
+        .previews.loaded #phonePreviewCanvas {
+            display: block;
+            height: var(--preview-max-size);
+            width: auto;
+            max-width: none;
+        }
+
+        .preview-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
         }
 
         .empty {
@@ -165,37 +290,30 @@
 
         canvas {
             display: none;
-            width: auto;
-            max-width: 100%;
             border-radius: 8px;
             filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
         }
 
-        #previewCanvas { max-height: 280px; }
+        #previewCanvas {
+            display: none;
+            width: 100%;
+            max-width: 100%;
+            aspect-ratio: 1;
+            height: auto;
+        }
 
         #phonePreviewCanvas {
-            width: 160px;
-            height: 200px;
-            border-radius: 18px;
+            display: none;
+            height: auto;
+            width: auto;
+            border-radius: 22px;
             box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
         }
 
-        .preview-grid {
-            display: none;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            justify-content: center;
-            gap: 28px;
-        }
-
-        .preview-block {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
         .preview-label {
+            display: none;
+            max-width: 100%;
+            text-align: center;
             font-family: var(--mono);
             font-size: 11px;
             letter-spacing: 0.04em;
@@ -208,13 +326,13 @@
 
         .stage.loaded {
             cursor: default;
-            background-image: none;
         }
 
-        .stage.loaded #previewCanvas,
-        .stage.loaded #phonePreviewCanvas { display: block; }
-        .stage.loaded .preview-grid { display: flex; }
-        .stage.loaded .empty { display: none; }
+        .icon-stage.loaded #previewCanvas { display: block; }
+        .icon-stage.loaded .empty { display: none; }
+        .phone-stage.loaded #phonePreviewCanvas { display: block; }
+        .icon-stage.loaded .preview-label,
+        .phone-stage.loaded .preview-label { display: block; }
 
         #canvas { display: none !important; }
 
@@ -222,7 +340,9 @@
         .panel {
             display: flex;
             flex-direction: column;
-            padding: 28px;
+            min-width: 0;
+            width: 100%;
+            padding: 22px 20px;
         }
 
         .brand {
@@ -252,13 +372,16 @@
             font-size: 13px;
             color: var(--text-dim);
             line-height: 1.5;
-            max-width: 52ch;
+        }
+
+        .app.loaded .tagline {
+            white-space: nowrap;
         }
 
         .controls { display: none; flex-direction: column; }
         .controls.show { display: flex; }
 
-        .control-group { margin-bottom: 20px; }
+        .control-group { margin-bottom: 16px; }
 
         .label-row {
             display: flex;
@@ -408,10 +531,33 @@
             border-radius: 4px;
         }
 
-        @media (max-width: 720px) {
-            .app { max-width: 460px; }
+        @media (max-width: 1100px) {
+            :root {
+                --panel-width: 260px;
+                --preview-max-size: min(480px, 72vh);
+                --icon-preview-size: min(520px, 72vh);
+            }
+            body { padding: 12px; }
+            .previews:not(.loaded) { min-height: 340px; }
+            .previews:not(.loaded) .icon-stage { min-height: 340px; }
+            .panel { padding: 20px 14px; }
+        }
+
+        @media (max-width: 900px) {
+            :root {
+                --preview-max-size: min(400px, 75vw);
+                --icon-preview-size: min(400px, 85vw);
+            }
+            body { padding: 12px; }
+            .app { max-width: 100%; }
             .body { grid-template-columns: 1fr; }
-            .stage { border-right: none; border-bottom: 1px solid var(--line); min-height: 320px; }
+            .panel { width: auto; padding: 20px 16px; }
+            .previews { border-right: none; border-bottom: 1px solid var(--line); }
+            .previews.loaded { grid-template-columns: 1fr; }
+            .previews.loaded .phone-stage { border-left: none; border-top: 1px solid var(--line); }
+            .previews:not(.loaded) { min-height: 300px; }
+            .previews:not(.loaded) .icon-stage { min-height: 300px; }
+            .previews.loaded .stage { min-height: 280px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -432,9 +578,10 @@
             <p class="tagline">Turn any image into a clean, rounded app icon or favicon. Tune it, then export a transparent PNG or a ready-to-use .ico file.</p>
         </header>
 
-        <div class="body">
-        <!-- Stage / dropzone -->
-        <div class="stage" id="uploadArea">
+        <div class="body" id="appBody">
+        <div class="previews" id="previewsArea">
+        <!-- Icon preview / dropzone -->
+        <div class="stage icon-stage" id="uploadArea">
             <input type="file" id="fileInput" accept="image/*">
             <div class="empty">
                 <div class="glyph">
@@ -447,17 +594,20 @@
                 <h2>Drop an image</h2>
                 <p>or click anywhere to browse</p>
             </div>
-            <div class="preview-grid" id="previewGrid">
-                <div class="preview-block">
-                    <canvas id="previewCanvas"></canvas>
-                    <span class="preview-label">Export preview · checkerboard = transparent</span>
-                </div>
-                <div class="preview-block">
-                    <canvas id="phonePreviewCanvas"></canvas>
-                    <span class="preview-label">On home screen</span>
-                </div>
+            <div class="preview-block">
+                <canvas id="previewCanvas"></canvas>
+                <span class="preview-label">Export preview · checkerboard = transparent</span>
             </div>
             <canvas id="canvas" aria-hidden="true"></canvas>
+        </div>
+
+        <!-- iPhone mockup -->
+        <div class="stage phone-stage" id="phonePreviewArea">
+            <div class="preview-block">
+                <canvas id="phonePreviewCanvas"></canvas>
+                <span class="preview-label">On iPhone home screen</span>
+            </div>
+        </div>
         </div>
 
         <!-- Control panel -->
@@ -476,9 +626,9 @@
                 <div class="control-group">
                     <div class="label-row">
                         <label for="bgSize">Background size <span class="hint">· padding</span></label>
-                        <span class="value-display" id="bgSizeValue">92%</span>
+                        <span class="value-display" id="bgSizeValue">100%</span>
                     </div>
-                    <input type="range" id="bgSize" min="70" max="100" value="92">
+                    <input type="range" id="bgSize" min="70" max="100" value="100">
                 </div>
 
                 <div class="control-group">
@@ -536,6 +686,11 @@
 
     <script>
         const stage = document.getElementById('uploadArea');
+        const previewsArea = document.getElementById('previewsArea');
+        const appBody = document.getElementById('appBody');
+        const appEl = document.querySelector('.app');
+        const phoneStage = document.getElementById('phonePreviewArea');
+        const uploadAreas = [previewsArea];
         const fileInput = document.getElementById('fileInput');
         const controls = document.getElementById('controls');
         const canvas = document.getElementById('canvas');
@@ -544,6 +699,17 @@
         const previewCtx = previewCanvas.getContext('2d');
         const phonePreviewCanvas = document.getElementById('phonePreviewCanvas');
         const phonePreviewCtx = phonePreviewCanvas.getContext('2d');
+        const iphoneHomescreen = new Image();
+        iphoneHomescreen.src = 'assets/iphone-homescreen.jpg';
+        let iphoneHomescreenReady = false;
+        const IPHONE_ICON_SLOT = { x: 73, y: 731, size: 90 };
+        const IPHONE_ICON_CORNER_RADIUS = 0.22;
+        const IPHONE_LABEL = { gapBelow: 8, height: 30, width: 96, fontSize: 14, fontWeight: 600, offsetY: -3 };
+        const IPHONE_APP_FONT = '"SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+        iphoneHomescreen.onload = () => {
+            iphoneHomescreenReady = true;
+            if (uploadedImage) updatePhonePreview();
+        };
         const downloadBtn = document.getElementById('downloadBtn');
         const downloadIcoBtn = document.getElementById('downloadIcoBtn');
         const downloadRow = document.getElementById('downloadRow');
@@ -607,24 +773,26 @@
         });
 
         // File upload handling
-        stage.addEventListener('click', () => fileInput.click());
+        uploadAreas.forEach((area) => {
+            area.addEventListener('click', () => fileInput.click());
 
-        stage.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            stage.classList.add('dragover');
-        });
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                previewsArea.classList.add('dragover');
+            });
 
-        stage.addEventListener('dragleave', () => {
-            stage.classList.remove('dragover');
-        });
+            area.addEventListener('dragleave', () => {
+                previewsArea.classList.remove('dragover');
+            });
 
-        stage.addEventListener('drop', (e) => {
-            e.preventDefault();
-            stage.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                loadImage(file);
-            }
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                previewsArea.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    loadImage(file);
+                }
+            });
         });
 
         fileInput.addEventListener('change', (e) => {
@@ -638,7 +806,11 @@
                 const img = new Image();
                 img.onload = () => {
                     uploadedImage = img;
+                    appEl.classList.add('loaded');
+                    appBody.classList.add('loaded');
+                    previewsArea.classList.add('loaded');
                     stage.classList.add('loaded');
+                    phoneStage.classList.add('loaded');
                     controls.classList.add('show');
                     downloadRow.classList.add('show');
                     drawIcon();
@@ -692,8 +864,6 @@
 
                 imgX = bgOffset + (bgSquareSize - imgWidth) / 2;
                 imgY = bgOffset + (bgSquareSize - imgHeight) / 2;
-
-                ctx.drawImage(uploadedImage, imgX, imgY, imgWidth, imgHeight);
             } else {
                 // Cover - fill entire space, crop if needed
                 if (imgAspect > 1) {
@@ -708,28 +878,21 @@
 
                 imgX = bgOffset + (bgSquareSize - imgWidth) / 2;
                 imgY = bgOffset + (bgSquareSize - imgHeight) / 2;
-
-                // Clip to rounded rectangle before drawing
-                ctx.save();
-                ctx.beginPath();
-                ctx.roundRect(
-                    bgOffset + (bgSquareSize - maxSize) / 2,
-                    bgOffset + (bgSquareSize - maxSize) / 2,
-                    maxSize,
-                    maxSize,
-                    radius * 0.8
-                );
-                ctx.clip();
-                ctx.drawImage(uploadedImage, imgX, imgY, imgWidth, imgHeight);
-                ctx.restore();
             }
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(bgOffset, bgOffset, bgSquareSize, bgSquareSize, radius);
+            ctx.clip();
+            ctx.drawImage(uploadedImage, imgX, imgY, imgWidth, imgHeight);
+            ctx.restore();
 
             updatePreview();
         }
 
         function updatePreview() {
             const size = canvas.width;
-            const previewDisplay = Math.min(320, size);
+            const previewDisplay = Math.min(640, size);
 
             previewCanvas.width = previewDisplay;
             previewCanvas.height = previewDisplay;
@@ -744,48 +907,79 @@
             updatePhonePreview();
         }
 
+        function drawIOSAppLabel(ctx, text, centerX, centerY, fontSize, fontWeight) {
+            ctx.font = `${fontWeight} ${fontSize}px ${IPHONE_APP_FONT}`;
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '-0.03em';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 1;
+            ctx.fillText(text, centerX, centerY);
+            ctx.shadowColor = 'transparent';
+            ctx.shadowOffsetY = 0;
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '0';
+        }
+
         function updatePhonePreview() {
-            const scale = 2;
-            const width = 160;
-            const height = 200;
-            phonePreviewCanvas.width = width * scale;
-            phonePreviewCanvas.height = height * scale;
-            phonePreviewCtx.setTransform(scale, 0, 0, scale, 0, 0);
+            if (!iphoneHomescreenReady || !uploadedImage) return;
 
-            const wallpaper = phonePreviewCtx.createLinearGradient(0, 0, width, height);
-            wallpaper.addColorStop(0, '#4f6fd8');
-            wallpaper.addColorStop(0.45, '#7c5fd4');
-            wallpaper.addColorStop(1, '#d4568f');
-            phonePreviewCtx.fillStyle = wallpaper;
-            phonePreviewCtx.fillRect(0, 0, width, height);
+            const screen = iphoneHomescreen;
+            const displayW = screen.naturalWidth;
+            const displayH = screen.naturalHeight;
 
-            const iconSize = 64;
-            const iconX = (width - iconSize) / 2;
-            const iconY = 42;
-            const maskRadius = iconSize * 0.224;
+            phonePreviewCanvas.width = displayW;
+            phonePreviewCanvas.height = displayH;
+            const previewMaxH = Math.min(window.innerHeight * 0.78, 560);
+            const previewScale = previewMaxH / displayH;
+            phonePreviewCanvas.style.width = `${displayW * previewScale}px`;
+            phonePreviewCanvas.style.height = `${displayH * previewScale}px`;
+            phonePreviewCtx.setTransform(1, 0, 0, 1, 0, 0);
+            phonePreviewCtx.imageSmoothingEnabled = true;
+            phonePreviewCtx.imageSmoothingQuality = 'high';
+
+            phonePreviewCtx.drawImage(screen, 0, 0, displayW, displayH);
+
+            const iconX = IPHONE_ICON_SLOT.x;
+            const iconY = IPHONE_ICON_SLOT.y;
+            const iconSize = IPHONE_ICON_SLOT.size;
+            const maskRadius = iconSize * IPHONE_ICON_CORNER_RADIUS;
+            const labelGap = IPHONE_LABEL.gapBelow;
+            const labelH = IPHONE_LABEL.height;
+            const labelTop = iconY + iconSize + labelGap;
+            const iosMaskRadiusPct = IPHONE_ICON_CORNER_RADIUS * 100;
+            const needsIOSWhiteFill =
+                parseInt(bgSize.value) < 100 || parseInt(cornerRadius.value) > iosMaskRadiusPct;
+
+            if (needsIOSWhiteFill) {
+                phonePreviewCtx.fillStyle = '#ffffff';
+                phonePreviewCtx.beginPath();
+                phonePreviewCtx.roundRect(iconX, iconY, iconSize, iconSize, maskRadius);
+                phonePreviewCtx.fill();
+            }
 
             phonePreviewCtx.save();
-            phonePreviewCtx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-            phonePreviewCtx.shadowBlur = 10;
-            phonePreviewCtx.shadowOffsetY = 4;
             phonePreviewCtx.beginPath();
             phonePreviewCtx.roundRect(iconX, iconY, iconSize, iconSize, maskRadius);
             phonePreviewCtx.clip();
-            phonePreviewCtx.fillStyle = '#ffffff';
-            phonePreviewCtx.fillRect(iconX, iconY, iconSize, iconSize);
             phonePreviewCtx.drawImage(
                 canvas, 0, 0, canvas.width, canvas.height,
                 iconX, iconY, iconSize, iconSize
             );
             phonePreviewCtx.restore();
 
-            phonePreviewCtx.fillStyle = '#fff';
-            phonePreviewCtx.font = '500 11px Space Grotesk, sans-serif';
-            phonePreviewCtx.textAlign = 'center';
-            phonePreviewCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-            phonePreviewCtx.shadowBlur = 6;
-            phonePreviewCtx.fillText('My App', width / 2, iconY + iconSize + 20);
-            phonePreviewCtx.shadowBlur = 0;
+            document.fonts.load(`${IPHONE_LABEL.fontWeight} ${IPHONE_LABEL.fontSize}px ${IPHONE_APP_FONT}`).then(() => {
+                drawIOSAppLabel(
+                    phonePreviewCtx,
+                    'MyApp',
+                    iconX + iconSize / 2,
+                    labelTop + labelH / 2 + IPHONE_LABEL.offsetY,
+                    IPHONE_LABEL.fontSize,
+                    IPHONE_LABEL.fontWeight
+                );
+            });
         }
 
         function drawCheckerboard(context, size) {
